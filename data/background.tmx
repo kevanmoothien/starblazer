@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="15" tilewidth="16" tileheight="16" backgroundcolor="#55aaff">
+ <tileset firstgid="1" name="smb3tiles8ao_" tilewidth="16" tileheight="16" spacing="1" margin="1">
+  <image source="smb3tiles8ao_.png" trans="ff80c0" width="498" height="516"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="20" height="15">
+  <data encoding="base64" compression="zlib">
+   eJxjYGBgmAfE8xlIA3tIVI8NSDIxMEgBsTQQWzBRpjYEKGaOhpHVigFpcSA2pjIOGMWjeBTTDQMA/yJPdA==
+  </data>
+ </layer>
+ <layer name="Tile Layer 2" width="20" height="15">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFlIBgRuriUTAKhhOgdv4AAK8SDSE=
+  </data>
+ </layer>
+</map>
