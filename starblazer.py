@@ -27,8 +27,8 @@ SCREEN_SIZE = [320, 240]
 TILE_SIZE = 16
 FPS = 60
 
-ARENA_Y = 20
-ARENA_HEIGHT = 170
+ARENA_Y = 25
+ARENA_HEIGHT = 200
 
 CAT_ORIGIN_X = 5
 CAT_ORIGIN_Y = 40
@@ -74,6 +74,7 @@ left_key = ["left", "a"]
 right_key = ["right", "d"]
 up_key = ["up", "w"]
 down_key = ["down", "s"]
+bomb_key = ["b"]
 action_key = ["space"]
 pause_key = ["enter", "p"]
 left_js = [(0, "axis-", 0), (0, "hat_left", 0)]
@@ -133,8 +134,8 @@ class TitleScreen(sge.dsp.Room):
     def event_step(self, time_passed, delta_mult):
         sge.game.project_text(font, "High Score", SCORE_X, SCORETITLE_Y,
                               color=sge.gfx.Color("white"), halign="center")
-        sge.game.project_text(font, str(max(highscores)), SCORE_X, SCORE_Y,
-                              color=sge.gfx.Color("white"), halign="center")
+        sge.game.project_text(font, str(score), SCORE_X + 35, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="center")
 
 class Arena(sge.dsp.Room):
     def __init__(self, difficulty=0):
@@ -147,7 +148,7 @@ class Arena(sge.dsp.Room):
         self.spawn_limit = 2
         self.spawn_choices = [Goomba]
         self.gameover = False
-        self.insfractures = [Cactus]
+        self.infrastructure = [Cactus, Building, Tower]
         if difficulty == 0:
             self.brick_columns = 5
             self.recover_time = 0
@@ -162,11 +163,6 @@ class Arena(sge.dsp.Room):
             self.recover_time = 5
             self.stage_interval = 30 * FPS
             self.stage = 1
-        elif difficulty == 3:
-            self.brick_columns = 2
-            self.recover_time = 7
-            self.stage_interval = 20 * FPS
-            self.stage = 2
         else:
             self.brick_columns = 1
             self.recover_time = 10
@@ -217,8 +213,8 @@ class Arena(sge.dsp.Room):
     def event_step(self, time_passed, delta_mult):
         sge.game.project_text(font, "Score", SCORE_X, SCORETITLE_Y,
                               color=sge.gfx.Color("white"), halign="center")
-        sge.game.project_text(font, str(score), SCORE_X, SCORE_Y,
-                              color=sge.gfx.Color("white"), halign="center")
+        sge.game.project_text(font, str(score), SCORE_X + 35, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="center")
 
     def event_alarm(self, alarm_id):
         global highscores
@@ -229,38 +225,38 @@ class Arena(sge.dsp.Room):
             if self.stage <= 0:
                 self.spawn_chance = 0.1
                 self.spawn_limit = 2
-                self.spawn_choices = [Goomba]
+                self.spawn_choices = [Plane]
             elif self.stage <= 1:
                 self.spawn_chance = 0.15
                 self.spawn_limit = 3
-                self.spawn_choices = [Goomba]
+                self.spawn_choices = [Plane]
             elif self.stage <= 2:
                 self.spawn_chance = 0.25
                 self.spawn_limit = 4
-                self.spawn_choices = [Goomba, Goomba, Goomba, GreenKoopa]
+                self.spawn_choices = [Plane, Plane, Plane]
             elif self.stage <= 3:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 5
-                self.spawn_choices = [Goomba, Goomba, Goomba, Goomba, Goomba,
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane,
                                       GreenKoopa, GreenKoopa, Spiny]
             elif self.stage <= 4:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 6
-                self.spawn_choices = [Goomba, Goomba, Goomba, Goomba, Goomba,
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane,
                                       GreenKoopa, GreenKoopa, Spiny, RedKoopa]
             elif self.stage <= 5:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 6
-                self.spawn_choices = [Goomba, Goomba, Goomba, Goomba, Goomba,
-                                      Goomba, Goomba, Goomba, GreenKoopa,
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane,
+                                      Plane, Plane, Plane, GreenKoopa,
                                       GreenKoopa, GreenKoopa, GreenKoopa,
                                       Spiny, Spiny, Spiny, Spiny, RedKoopa,
                                       RedKoopa, HammerBro]
             elif self.stage <= 6:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 6
-                self.spawn_choices = [Goomba, Goomba, Goomba, Goomba, Goomba,
-                                      Goomba, GreenKoopa, GreenKoopa, Spiny,
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane,
+                                      Plane, GreenKoopa, GreenKoopa, Spiny,
                                       Spiny, Spiny, Spiny, Spiny, Spiny,
                                       RedKoopa, RedKoopa, HammerBro]
             else:
@@ -282,10 +278,8 @@ class Arena(sge.dsp.Room):
                                    ARENA_Y + ARENA_HEIGHT - TILE_SIZE)
                 cls.create(self.width + TILE_SIZE, y)
 
-                infra = random.choice(self.insfractures)
-                # y = random.uniform(ARENA_Y + TILE_SIZE,
-                #                    ARENA_Y + ARENA_HEIGHT - TILE_SIZE)
-                infra.create(300, 250)
+                infra = random.choice(self.infrastructure)
+                infra.create(300, 255)
 
             self.alarms["spawn"] = SPAWN_INTERVAL
 
@@ -343,6 +337,16 @@ class Player(xsge_physics.Collider):
             self.shooting = True
             self.alarms["shoot_end"] = 2 * FPS / CAT_FPS
             Bullet.create(self.x + CAT_BULLET_X, self.y + CAT_BULLET_Y)
+            score = max(0, score - BULLET_COST)
+
+    def bomb(self):
+        global score
+
+        if not self.dead and not self.recovering:
+            play_sound(shoot_sound)
+            self.shooting = True
+            self.alarms["shoot_end"] = 2 * FPS / CAT_FPS
+            Bomb.create(self.x + CAT_BULLET_X, self.y + CAT_BULLET_Y)
             score = max(0, score - BULLET_COST)
 
     def kill(self):
@@ -448,6 +452,8 @@ class Player(xsge_physics.Collider):
             self.action()
         if key in pause_key:
             sge.game.current_room.pause()
+        if key in bomb_key:
+            self.bomb()
 
 class Brick(xsge_physics.Solid):
     def __init__(self, x, y):
@@ -473,6 +479,24 @@ class Bullet(sge.dsp.Object):
         if isinstance(other, Enemy):
             Corpse.create(self.x, self.y, z=(other.z + 1),
                           sprite=bullet_dead_sprite, life=8)
+            self.destroy()
+            other.hurt()
+
+class Bomb(sge.dsp.Object):
+    def __init__(self, x, y, sprite=None, visible=True, xvelocity=0,
+                 yvelocity=0):
+        super(Bomb, self).__init__(
+            x, y, sprite=bomb_sprite,
+            xvelocity=1, yvelocity=2)
+    def event_step(self, time_passed, delta_mult):
+        if self.y > sge.game.current_room.height + self.image_origin_y:
+            Corpse.create(self.x, sge.game.current_room.height - 20,
+                          sprite=explosion_sprite, life=8)
+            self.destroy()
+    def event_collision(self, other, xdirection, ydirection):
+        if isinstance(other, Enemy):
+            Corpse.create(self.x, self.y, z=(other.z + 1),
+                          sprite=explosion_sprite, life=8)
             self.destroy()
             other.hurt()
 
@@ -527,6 +551,11 @@ class Enemy(xsge_physics.Collider):
 class Goomba(Enemy):
     def __init__(self, x, y):
         super(Goomba, self).__init__(x, y, z=y, sprite=goomba_sprite,
+                                     xvelocity=-GOOMBA_SPEED)
+
+class Plane(Enemy):
+    def __init__(self, x, y):
+        super(Plane, self).__init__(x, y, z=y, sprite=planes_sprite,
                                      xvelocity=-GOOMBA_SPEED)
 
 class Corpse(sge.dsp.Object):
@@ -608,7 +637,15 @@ class Infrastructure(xsge_physics.Collider):
 class Cactus(Infrastructure):
     def __init__(self, x, y):
         super(Cactus, self).__init__(x, y, z=y, sprite=cactus_sprite,
-                                     xvelocity=-1.5)
+                                     xvelocity=-1.0)
+class Building(Infrastructure):
+    def __init__(self, x, y):
+        super(Building, self).__init__(x, y, z=y, sprite=building_sprite,
+                                     xvelocity=-1.0)
+class Tower(Enemy):
+    def __init__(self, x, y):
+        super(Tower, self).__init__(x, y, z=y, sprite=tower_sprite,
+                                     xvelocity=-1.0)
 
 class Menu(xsge_gui.MenuWindow):
     items = []
@@ -633,7 +670,7 @@ class MainMenu(Menu):
 
     def event_choose(self):
         if self.choice == 0:
-            StartGameMenu.create(default=2)
+            StartGameMenu.create(default=0)
         elif self.choice == 1:
             OptionsMenu.create_page()
         elif self.choice == 2:
@@ -646,9 +683,9 @@ class MainMenu(Menu):
             sge.game.end()
 
 class StartGameMenu(Menu):
-    items = ["Baby", "Easy", "Normal", "Hard", "Insane!", "Back"]
+    items = ["Easy", "Normal", "Hard", "Back"]
     def event_choose(self):
-        if self.choice in {0, 1, 2, 3, 4}:
+        if self.choice in {0, 1, 2}:
             arena = Arena(self.choice)
             arena.start()
         else:
@@ -704,6 +741,7 @@ class KeyboardMenu(Menu):
                      "Right: {}".format(format_key(right_key)),
                      "Up: {}".format(format_key(up_key)),
                      "Down: {}".format(format_key(down_key)),
+                     "Bomb: {}".format(format_key(bomb_key)),
                      "Action: {}".format(format_key(action_key)),
                      "Pause: {}".format(format_key(pause_key)),
                      "Back"]
@@ -883,7 +921,7 @@ sge.game.scale = None
 xsge_gui.init()
 gui_handler = xsge_gui.Handler()
 
-fname = os.path.join(DATA, "cat_sheet.png")
+# fname = os.path.join(DATA, "cat_sheet.png")
 # cat_stand_sprite = sge.gfx.Sprite.from_tileset(
 #     fname, 0, 64, columns=8, width=64, height=64, origin_x=CAT_ORIGIN_X,
 #     origin_y=CAT_ORIGIN_Y, fps=CAT_FPS)
@@ -910,8 +948,16 @@ cat_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
 cat_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 cat_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 
-cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True)
+cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, width=10, height=20)
+building_sprite = sge.gfx.Sprite("building", DATA, transparent=True)
+tower_sprite = sge.gfx.Sprite("tower", DATA, transparent=True, width=10, height=45)
 
+planes_sprite = sge.gfx.Sprite(
+    "planes", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
+    bbox_width=12, bbox_height=14)
+explosion_sprite = sge.gfx.Sprite(
+    "explosion", DATA, origin_x=2,
+    origin_y=2)
 bullet_sprite = sge.gfx.Sprite("bullet", DATA, origin_x=1, origin_y=-5,
                                bbox_x=-2, bbox_y=-2, bbox_width=5,
                                bbox_height=5)
@@ -919,6 +965,7 @@ bullet_dead_sprite = sge.gfx.Sprite(
     "bullet_dead", DATA, transparent=sge.gfx.Color("black"), origin_x=2,
     origin_y=2)
 brick_sprite = sge.gfx.Sprite("brick", DATA, transparent=False)
+bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
 brick_shard_sprite = sge.gfx.Sprite("brick_shard", DATA)
 goomba_sprite = sge.gfx.Sprite(
     "goomba", DATA, origin_x=8, origin_y=8, fps=3, bbox_x=-6, bbox_y=-7,
