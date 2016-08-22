@@ -45,7 +45,7 @@ CAT_INVINCIBLE_TIME = 180
 BULLET_COST = 20
 BULLET_SPEED = 4
 
-GOOMBA_SPEED = 0.375
+ENEMY_SPEED = 0.375
 GREENKOOPA_SPEED = 0.375
 SPINY_SPEED = 0.375
 REDKOOPA_SPEED = 0.75
@@ -86,6 +86,7 @@ pause_js = [(0, "button", 9)]
 
 score = 0
 highscores = [0, 0, 0, 0, 0]
+tank = False
 
 class Game(sge.dsp.Game):
     fps_time = 0
@@ -146,7 +147,7 @@ class Arena(sge.dsp.Room):
         self.stage = -1
         self.spawn_chance = 0
         self.spawn_limit = 2
-        self.spawn_choices = [Goomba]
+        self.spawn_choices = [Plane]
         self.gameover = False
         self.infrastructure = [Cactus, Building, Tower]
         if difficulty == 0:
@@ -218,6 +219,7 @@ class Arena(sge.dsp.Room):
 
     def event_alarm(self, alarm_id):
         global highscores
+        global tank
 
         if alarm_id == "next_stage":
             self.stage += 1
@@ -225,15 +227,15 @@ class Arena(sge.dsp.Room):
             if self.stage <= 0:
                 self.spawn_chance = 0.1
                 self.spawn_limit = 2
-                self.spawn_choices = [Plane]
+                self.spawn_choices = [Plane, Tanker]
             elif self.stage <= 1:
                 self.spawn_chance = 0.15
                 self.spawn_limit = 3
-                self.spawn_choices = [Plane]
+                self.spawn_choices = [Plane, Tanker]
             elif self.stage <= 2:
                 self.spawn_chance = 0.25
                 self.spawn_limit = 4
-                self.spawn_choices = [Plane, Plane, Plane]
+                self.spawn_choices = [Plane, Plane, Plane, Tanker, Tanker]
             elif self.stage <= 3:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 5
@@ -276,7 +278,12 @@ class Arena(sge.dsp.Room):
                 cls = random.choice(self.spawn_choices)
                 y = random.uniform(ARENA_Y + TILE_SIZE,
                                    ARENA_Y + ARENA_HEIGHT - TILE_SIZE)
-                cls.create(self.width + TILE_SIZE, y)
+                if cls == Tanker:
+                    if tank == False:
+                        tank = True
+                        Tanker.create(0, 255)
+                else:
+                    cls.create(self.width + TILE_SIZE, y)
 
                 infra = random.choice(self.infrastructure)
                 infra.create(300, 255)
@@ -551,12 +558,29 @@ class Enemy(xsge_physics.Collider):
 class Goomba(Enemy):
     def __init__(self, x, y):
         super(Goomba, self).__init__(x, y, z=y, sprite=goomba_sprite,
-                                     xvelocity=-GOOMBA_SPEED)
-
+                                     xvelocity=-ENEMY_SPEED)
 class Plane(Enemy):
     def __init__(self, x, y):
         super(Plane, self).__init__(x, y, z=y, sprite=planes_sprite,
-                                     xvelocity=-GOOMBA_SPEED)
+                                     xvelocity=-ENEMY_SPEED)
+class Tanker(Enemy):
+    def __init__(self, x, y):
+        super(Tanker, self).__init__(x, y, z=y, sprite=tank_sprite,
+                                     xvelocity=ENEMY_SPEED)
+    def event_step(self, time_passed, delta_mult):
+        global tank
+        if self.x > 300:
+            tank = False
+            self.destroy()
+    def kill(self):
+        global score
+        global tank
+        play_sound(kick_sound)
+        Corpse.create(self.x, self.y, sprite=self.sprite, yvelocity=-2,
+                      yacceleration=0.25, image_yscale=-1, image_fps=0)
+        score += self.points
+        tank = False
+        self.destroy()
 
 class Corpse(sge.dsp.Object):
     def __init__(self, x, y, z=1000, sprite=None, visible=True, xvelocity=0,
@@ -950,11 +974,15 @@ cat_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 
 cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, width=10, height=20)
 building_sprite = sge.gfx.Sprite("building", DATA, transparent=True)
-tower_sprite = sge.gfx.Sprite("tower", DATA, transparent=True, width=10, height=45)
+tower_sprite = sge.gfx.Sprite("tower", DATA, transparent=True, bbox_x=6, bbox_y=7,
+                                    width=10, height=45, bbox_width=10, bbox_height=25)
 
 planes_sprite = sge.gfx.Sprite(
     "planes", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
     bbox_width=12, bbox_height=14)
+tank_sprite = sge.gfx.Sprite(
+    "tank0", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
+    bbox_width=12, bbox_height=7, width=40, height=20)
 explosion_sprite = sge.gfx.Sprite(
     "explosion", DATA, origin_x=2,
     origin_y=2)
