@@ -30,17 +30,17 @@ FPS = 60
 ARENA_Y = 25
 ARENA_HEIGHT = 200
 
-CAT_ORIGIN_X = 5
-CAT_ORIGIN_Y = 40
-CAT_FPS = 12
-CAT_BBOX_X = 50
-CAT_BBOX_Y = 3
-CAT_BBOX_WIDTH = 11
-CAT_BBOX_HEIGHT = 11
-CAT_BULLET_X = 16
-CAT_BULLET_Y = 0
-CAT_WALK_SPEED = 1
-CAT_INVINCIBLE_TIME = 180
+PLAYER_ORIGIN_X = 5
+PLAYER_ORIGIN_Y = 40
+PLAYER_FPS = 12
+PLAYER_BBOX_X = 50
+PLAYER_BBOX_Y = 3
+PLAYER_BBOX_WIDTH = 11
+PLAYER_BBOX_HEIGHT = 11
+PLAYER_BULLET_X = 16
+PLAYER_BULLET_Y = 0
+PLAYER_WALK_SPEED = 1
+PLAYER_INVINCIBLE_TIME = 180
 
 BULLET_COST = 20
 BULLET_SPEED = 4
@@ -87,6 +87,8 @@ pause_js = [(0, "button", 9)]
 score = 0
 highscores = [0, 0, 0, 0, 0]
 tank = False
+fuelship = False
+deploy = False
 
 class Game(sge.dsp.Game):
     fps_time = 0
@@ -133,7 +135,7 @@ class TitleScreen(sge.dsp.Room):
         sge.snd.Music.stop(1000)
         MainMenu.create()
     def event_step(self, time_passed, delta_mult):
-        sge.game.project_text(font, "High Score", SCORE_X, SCORETITLE_Y,
+        sge.game.project_text(font, "High Score", SCORE_X - 35, SCORETITLE_Y,
                               color=sge.gfx.Color("white"), halign="center")
         sge.game.project_text(font, str(score), SCORE_X + 35, SCORETITLE_Y,
                               color=sge.gfx.Color("blue"), halign="center")
@@ -192,15 +194,6 @@ class Arena(sge.dsp.Room):
         tile_w = brick_sprite.width
         tile_h = brick_sprite.height
 
-        # for column in six.moves.range(self.brick_columns):
-        #     x = column * tile_w
-        #     for y in six.moves.range(ARENA_Y, ARENA_Y + ARENA_HEIGHT, tile_h):
-        #         Brick.create(x, y)
-
-        # x = self.brick_columns * tile_w + TILE_SIZE
-
-
-
         x = tile_w + TILE_SIZE
         y = ARENA_Y + ARENA_HEIGHT / 2
 
@@ -212,14 +205,25 @@ class Arena(sge.dsp.Room):
         play_music("music.mid")
 
     def event_step(self, time_passed, delta_mult):
+        # score
         sge.game.project_text(font, "Score", SCORE_X, SCORETITLE_Y,
                               color=sge.gfx.Color("white"), halign="center")
         sge.game.project_text(font, str(score), SCORE_X + 35, SCORETITLE_Y,
                               color=sge.gfx.Color("blue"), halign="center")
-
+        # level
+        sge.game.project_text(font, "Level", 30, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="center")
+        sge.game.project_text(font, str(1), 60, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="center")
+        # Fuel
+        sge.game.project_text(font, "Fuel", 260, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="center")
+        sge.game.project_text(font, str(10), 290, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="center")
     def event_alarm(self, alarm_id):
         global highscores
         global tank
+        global fuelship
 
         if alarm_id == "next_stage":
             self.stage += 1
@@ -227,20 +231,19 @@ class Arena(sge.dsp.Room):
             if self.stage <= 0:
                 self.spawn_chance = 0.1
                 self.spawn_limit = 2
-                self.spawn_choices = [Plane, Tanker]
+                self.spawn_choices = [Plane, Tanker, Fuelship]
             elif self.stage <= 1:
                 self.spawn_chance = 0.15
                 self.spawn_limit = 3
-                self.spawn_choices = [Plane, Tanker]
+                self.spawn_choices = [Plane, Tanker, Fuelship]
             elif self.stage <= 2:
                 self.spawn_chance = 0.25
                 self.spawn_limit = 4
-                self.spawn_choices = [Plane, Plane, Plane, Tanker, Tanker]
+                self.spawn_choices = [Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
             elif self.stage <= 3:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 5
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane,
-                                      GreenKoopa, GreenKoopa, Spiny]
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
             elif self.stage <= 4:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 6
@@ -282,6 +285,11 @@ class Arena(sge.dsp.Room):
                     if tank == False:
                         tank = True
                         Tanker.create(0, 255)
+                elif cls == Fuelship:
+                    if fuelship == False:
+                        fuelship = True
+                        deploy = False
+                        Fuelship.create(0, 30)
                 else:
                     cls.create(self.width + TILE_SIZE, y)
 
@@ -303,9 +311,9 @@ class Arena(sge.dsp.Room):
 class Player(xsge_physics.Collider):
     def __init__(self, x, y):
         super(Player, self).__init__(
-            x, y, z=y, sprite=cat_stand_sprite, checks_collisions=False,
-            bbox_x=CAT_BBOX_X, bbox_y=CAT_BBOX_Y, bbox_width=CAT_BBOX_WIDTH,
-            bbox_height=CAT_BBOX_HEIGHT)
+            x, y, z=y, sprite=player_stand_sprite, checks_collisions=False,
+            bbox_x=PLAYER_BBOX_X, bbox_y=PLAYER_BBOX_Y, bbox_width=PLAYER_BBOX_WIDTH,
+            bbox_height=PLAYER_BBOX_HEIGHT)
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
@@ -342,8 +350,8 @@ class Player(xsge_physics.Collider):
         if not self.dead and not self.recovering:
             play_sound(shoot_sound)
             self.shooting = True
-            self.alarms["shoot_end"] = 2 * FPS / CAT_FPS
-            Bullet.create(self.x + CAT_BULLET_X, self.y + CAT_BULLET_Y)
+            self.alarms["shoot_end"] = 2 * FPS / PLAYER_FPS
+            Bullet.create(self.x + PLAYER_BULLET_X, self.y + PLAYER_BULLET_Y)
             score = max(0, score - BULLET_COST)
 
     def bomb(self):
@@ -352,8 +360,8 @@ class Player(xsge_physics.Collider):
         if not self.dead and not self.recovering:
             play_sound(shoot_sound)
             self.shooting = True
-            self.alarms["shoot_end"] = 2 * FPS / CAT_FPS
-            Bomb.create(self.x + CAT_BULLET_X, self.y + CAT_BULLET_Y)
+            self.alarms["shoot_end"] = 2 * FPS / PLAYER_FPS
+            Bomb.create(self.x + PLAYER_BULLET_X, self.y + PLAYER_BULLET_Y)
             score = max(0, score - BULLET_COST)
 
     def kill(self):
@@ -362,7 +370,7 @@ class Player(xsge_physics.Collider):
             self.dead = True
             self.xvelocity = 0
             self.yvelocity = 0
-            self.sprite = cat_die_sprite
+            self.sprite = player_die_sprite
             self.image_index = 0
             play_sound(die_sound)
 
@@ -370,7 +378,7 @@ class Player(xsge_physics.Collider):
         if self.dead and not self.recovering:
             self.recovering = True
             self.recover_timer = None
-            self.sprite = cat_recover_sprite
+            self.sprite = player_recover_sprite
             self.image_index = 0
             self.image_fps = None
 
@@ -380,22 +388,22 @@ class Player(xsge_physics.Collider):
 
             # Set speed
             self.xvelocity = ((self.right_pressed - self.left_pressed) *
-                              CAT_WALK_SPEED)
+                              PLAYER_WALK_SPEED)
             self.yvelocity = ((self.down_pressed - self.up_pressed) *
-                              CAT_WALK_SPEED)
-            self.speed = min(self.speed, CAT_WALK_SPEED)
+                              PLAYER_WALK_SPEED)
+            self.speed = min(self.speed, PLAYER_WALK_SPEED)
 
             # Set image
             if self.shooting:
                 if self.xvelocity or self.yvelocity:
-                    self.sprite = cat_walk_shoot_sprite
+                    self.sprite = player_walk_shoot_sprite
                 else:
-                    self.sprite = cat_stand_shoot_sprite
+                    self.sprite = player_stand_shoot_sprite
             else:
                 if self.xvelocity or self.yvelocity:
-                    self.sprite = cat_walk_sprite
+                    self.sprite = player_walk_sprite
                 else:
-                    self.sprite = cat_stand_sprite
+                    self.sprite = player_stand_sprite
 
             # Set Z value
             self.z = self.bbox_bottom
@@ -436,10 +444,10 @@ class Player(xsge_physics.Collider):
             self.dead = False
             self.recovering = False
             self.recover_timer = None
-            self.sprite = cat_stand_sprite
+            self.sprite = player_stand_sprite
             self.image_index = 0
             self.image_fps = None
-            self.alarms["invincible"] = CAT_INVINCIBLE_TIME
+            self.alarms["invincible"] = PLAYER_INVINCIBLE_TIME
 
             if sge.game.current_room.gameover:
                 self.kill()
@@ -563,6 +571,39 @@ class Plane(Enemy):
     def __init__(self, x, y):
         super(Plane, self).__init__(x, y, z=y, sprite=planes_sprite,
                                      xvelocity=-ENEMY_SPEED)
+
+class Fuelship(Enemy):
+    def __init__(self, x, y):
+        super(Fuelship, self).__init__(x, y, z=y, sprite=fuelship_sprite,
+                                    xvelocity=ENEMY_SPEED)
+    def event_step(self, time_passed, delta_mult):
+        global fuelship
+        global deploy
+        if self.x > 300:
+            fuelship = False
+            self.destroy()
+        if self.x > 180 and deploy == False:
+            deploy = True
+            Fuel.create(self.x, self.y)
+
+class Fuel(sge.dsp.Object):
+    def __init__(self, x, y, sprite=None, visible=True, xvelocity=0,
+                 yvelocity=0):
+        super(Fuel, self).__init__(
+            x, y, sprite=fuelbox_sprite,
+            xvelocity=1, yvelocity=2)
+    def event_step(self, time_passed, delta_mult):
+        if self.y > sge.game.current_room.height + self.image_origin_y:
+            # Corpse.create(self.x, sge.game.current_room.height - 20,
+            #               sprite=explosion_sprite, life=8)
+            self.destroy()
+    # def event_collision(self, other, xdirection, ydirection):
+    #     if isinstance(other, Enemy):
+    #         Corpse.create(self.x, self.y, z=(other.z + 1),
+    #                       sprite=explosion_sprite, life=8)
+    #         self.destroy()
+    #         other.hurt()
+
 class Tanker(Enemy):
     def __init__(self, x, y):
         super(Tanker, self).__init__(x, y, z=y, sprite=tank_sprite,
@@ -945,32 +986,13 @@ sge.game.scale = None
 xsge_gui.init()
 gui_handler = xsge_gui.Handler()
 
-# fname = os.path.join(DATA, "cat_sheet.png")
-# cat_stand_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 0, 64, columns=8, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=CAT_FPS)
-# cat_stand_shoot_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 0, 128, columns=8, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=CAT_FPS)
-# cat_walk_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 0, 192, columns=8, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=CAT_FPS)
-# cat_walk_shoot_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 0, 256, columns=8, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=CAT_FPS)
-# cat_die_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 0, 512, columns=7, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=4)
-# cat_recover_sprite = sge.gfx.Sprite.from_tileset(
-#     fname, 448, 512, columns=2, width=64, height=64, origin_x=CAT_ORIGIN_X,
-#     origin_y=CAT_ORIGIN_Y, fps=4)
 
-cat_stand_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-cat_stand_shoot_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-cat_walk_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
-cat_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
-cat_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-cat_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
+player_stand_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
+player_stand_shoot_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
+player_walk_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
+player_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
+player_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
+player_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 
 cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, width=10, height=20)
 building_sprite = sge.gfx.Sprite("building", DATA, transparent=True)
@@ -980,6 +1002,9 @@ tower_sprite = sge.gfx.Sprite("tower", DATA, transparent=True, bbox_x=6, bbox_y=
 planes_sprite = sge.gfx.Sprite(
     "planes", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
     bbox_width=12, bbox_height=14)
+fuelship_sprite = sge.gfx.Sprite(
+    "fuelship", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
+    bbox_width=12, bbox_height=14, height=10)
 tank_sprite = sge.gfx.Sprite(
     "tank0", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
     bbox_width=12, bbox_height=7, width=40, height=20)
@@ -994,6 +1019,9 @@ bullet_dead_sprite = sge.gfx.Sprite(
     origin_y=2)
 brick_sprite = sge.gfx.Sprite("brick", DATA, transparent=False)
 bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
+
+fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True)
+
 brick_shard_sprite = sge.gfx.Sprite("brick_shard", DATA)
 goomba_sprite = sge.gfx.Sprite(
     "goomba", DATA, origin_x=8, origin_y=8, fps=3, bbox_x=-6, bbox_y=-7,
@@ -1047,9 +1075,7 @@ font_sprite = sge.gfx.Sprite("font", DATA, transparent=sge.gfx.Color("black"))
 font = sge.gfx.Font.from_sprite(font_sprite, chars, size=8)
 
 ########################
-
 brick_sprite = sge.gfx.Sprite("brick", DATA, transparent=False)
-
 ########################
 
 
