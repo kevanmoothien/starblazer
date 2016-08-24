@@ -591,7 +591,7 @@ class Fuel(sge.dsp.Object):
                  yvelocity=0):
         super(Fuel, self).__init__(
             x, y, sprite=fuelbox_sprite,
-            xvelocity=1, yvelocity=2)
+            xvelocity=1, yvelocity=1.5)
     def event_step(self, time_passed, delta_mult):
         if self.y > sge.game.current_room.height + self.image_origin_y:
             # Corpse.create(self.x, sge.game.current_room.height - 20,
