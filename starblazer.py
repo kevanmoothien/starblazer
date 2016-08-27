@@ -770,14 +770,14 @@ class MainMenu(Menu):
         else:
             sge.game.end()
 
-class StartGameMenu(Menu):
-    items = ["Easy", "Normal", "Hard", "Back"]
-    def event_choose(self):
-        if self.choice in {0, 1, 2}:
-            arena = Arena(self.choice)
-            arena.start()
-        else:
-            MainMenu.create(default=0)
+# class StartGameMenu(Menu):
+#     items = ["Easy", "Normal", "Hard", "Back"]
+#     def event_choose(self):
+#         if self.choice in {0, 1, 2}:
+#             arena = Arena(self.choice)
+#             arena.start()
+#         else:
+#             MainMenu.create(default=0)
 
 class OptionsMenu(Menu):
     @classmethod
