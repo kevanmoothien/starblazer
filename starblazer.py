@@ -1017,13 +1017,15 @@ player_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
 player_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 player_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
 
-cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, width=10, height=20)
-building_sprite = sge.gfx.Sprite("building", DATA, transparent=True)
+cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, bbox_x=6, bbox_y=-7,
+                                    width=10, height=20, bbox_width=10, bbox_height=20)
+building_sprite = sge.gfx.Sprite("building", DATA, transparent=True, bbox_x=6, bbox_y=-7,
+                                    width=40, height=23, bbox_width=40, bbox_height=23)
 tower_sprite = sge.gfx.Sprite("tower", DATA, transparent=True, bbox_x=6, bbox_y=7,
                                     width=10, height=45, bbox_width=10, bbox_height=25)
 
 planes_sprite = sge.gfx.Sprite(
-    "planes", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
+    "plane", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
     bbox_width=12, bbox_height=14)
 fuelship_sprite = sge.gfx.Sprite(
     "fuelship", DATA, origin_x=20, origin_y=10, fps=3, bbox_x=-6, bbox_y=-7,
