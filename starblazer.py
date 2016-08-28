@@ -45,16 +45,6 @@ BULLET_COST = 20
 BULLET_SPEED = 4
 
 ENEMY_SPEED = 0.375
-# GREENKOOPA_SPEED = 0.375
-# SPINY_SPEED = 0.375
-# REDKOOPA_SPEED = 0.75
-# HAMMERBRO_SPEED = 0.25
-# SHELL_SPEED = 2
-
-# HAMMER_INTERVAL = 60
-# HAMMER_WARMUP = 30
-# HAMMER_FOLLOWTHROUGH = 15
-# HAMMER_SPEED = 3
 
 SPAWN_INTERVAL = 30
 
@@ -68,7 +58,6 @@ fullscreen = False
 sound_enabled = True
 music_enabled = True
 fps_enabled = False
-# joystick_threshold = 0.1
 left_key = ["left", "a"]
 right_key = ["right", "d"]
 up_key = ["up", "w"]
@@ -76,12 +65,6 @@ down_key = ["down", "s"]
 bomb_key = ["b"]
 action_key = ["space"]
 pause_key = ["enter", "p"]
-# left_js = [(0, "axis-", 0), (0, "hat_left", 0)]
-# right_js = [(0, "axis+", 0), (0, "hat_right", 0)]
-# up_js = [(0, "axis-", 1), (0, "hat_up", 0)]
-# down_js = [(0, "axis+", 1), (0, "hat_down", 0)]
-# action_js = [(0, "button", 1), (0, "button", 3)]
-# pause_js = [(0, "button", 9)]
 
 score = 0
 highscores = [0]
@@ -356,19 +339,12 @@ class Player(xsge_physics.Collider):
 
     def refresh_input(self):
         key_controls = [left_key, right_key, up_key, down_key]
-        # js_controls = [left_js, right_js, up_js, down_js]
         states = [0 for i in key_controls]
 
         for i in six.moves.range(len(key_controls)):
             for choice in key_controls[i]:
                 value = sge.keyboard.get_pressed(choice)
                 states[i] = max(states[i], value)
-
-        # for i in six.moves.range(len(js_controls)):
-        #     for choice in js_controls[i]:
-        #         j, t, c = choice
-        #         value = min(sge.joystick.get_value(j, t, c), 1)
-        #         states[i] = max(states[i], value)
 
         self.left_pressed = states[0]
         self.right_pressed = states[1]
@@ -751,33 +727,16 @@ class Menu(xsge_gui.MenuWindow):
             return self
 
 class MainMenu(Menu):
-    # items = ["Start Game", "Options", "Scores", "Credits", "Quit"]
     items = ["Start Game", "Options", "Quit"]
 
     def event_choose(self):
         if self.choice == 0:
-            # StartGameMenu.create(default=0)
             arena = Arena(self.choice)
             arena.start()
         elif self.choice == 1:
             OptionsMenu.create_page()
-        # elif self.choice == 2:
-        #     scores_room = ScoresScreen()
-        #     scores_room.start()
-        # elif self.choice == 3:
-        #     credits_room = CreditsScreen()
-        #     credits_room.start()
         else:
             sge.game.end()
-
-# class StartGameMenu(Menu):
-#     items = ["Easy", "Normal", "Hard", "Back"]
-#     def event_choose(self):
-#         if self.choice in {0, 1, 2}:
-#             arena = Arena(self.choice)
-#             arena.start()
-#         else:
-#             MainMenu.create(default=0)
 
 class OptionsMenu(Menu):
     @classmethod
@@ -1042,54 +1001,14 @@ bullet_sprite = sge.gfx.Sprite("bullet", DATA, origin_x=1, origin_y=-5,
 bullet_dead_sprite = sge.gfx.Sprite(
     "bullet_dead", DATA, transparent=sge.gfx.Color("black"), origin_x=2,
     origin_y=2)
-# brick_sprite = sge.gfx.Sprite("brick", DATA, transparent=False)
 bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
 
 fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True)
-
-# brick_shard_sprite = sge.gfx.Sprite("brick_shard", DATA)
-# goomba_sprite = sge.gfx.Sprite(
-#     "goomba", DATA, origin_x=8, origin_y=8, fps=3, bbox_x=-6, bbox_y=-7,
-#     bbox_width=12, bbox_height=14)
-# greenkoopa_sprite = sge.gfx.Sprite(
-#     "greenkoopa", DATA, origin_x=8, origin_y=19, fps=4, bbox_x=1, bbox_y=-17,
-#     bbox_width=8, bbox_height=25)
-# greenshell_sprite = sge.gfx.Sprite(
-#     "greenshell", DATA, origin_x=8, origin_y=8, bbox_x=-6, bbox_y=-7,
-#     bbox_width=10, bbox_height=14)
-# greenshelldash_sprite = sge.gfx.Sprite(
-#     "greenshelldash", DATA, origin_x=8, origin_y=8, fps=8, bbox_x=-6,
-#     bbox_y=-7, bbox_width=10, bbox_height=14)
-# redkoopa_sprite = sge.gfx.Sprite(
-#     "redkoopa", DATA, origin_x=8, origin_y=19, fps=6, bbox_x=1, bbox_y=-17,
-#     bbox_width=8, bbox_height=25)
-# redshell_sprite = sge.gfx.Sprite(
-#     "redshell", DATA, origin_x=8, origin_y=8, bbox_x=-6, bbox_y=-7,
-#     bbox_width=10, bbox_height=14)
-# redshelldash_sprite = sge.gfx.Sprite(
-#     "redshelldash", DATA, origin_x=8, origin_y=8, fps=8, bbox_x=-6, bbox_y=-7,
-#     bbox_width=10, bbox_height=14)
-# spiny_sprite = sge.gfx.Sprite(
-#     "spiny", DATA, origin_x=9, origin_y=9, fps=3, bbox_x=-7, bbox_y=-7,
-#     bbox_width=15, bbox_height=15)
-# hammerbro_sprite = sge.gfx.Sprite(
-#     "hammerbro", DATA, origin_x=17, origin_y=19, fps=3, bbox_x=-5, bbox_y=-1,
-#     bbox_width=11, bbox_height=23)
-# hammerbro_throw_sprite = sge.gfx.Sprite(
-#     "hammerbro_throw", DATA, origin_x=17, origin_y=19, fps=3, bbox_x=-5,
-#     bbox_y=-1, bbox_width=11, bbox_height=23)
-# hammer_sprite = sge.gfx.Sprite("hammer", DATA, origin_x=8, origin_y=8, fps=15,
-#                                bbox_x=-4, bbox_y=0, bbox_width=8,
-#                                bbox_height=4)
-
 # Load sounds
 shoot_sound = sge.snd.Sound(os.path.join(DATA, "shoot.wav"), volume=0.5)
 enemy_hit_sound = sge.snd.Sound(os.path.join(DATA, "enemy_hit.wav"), volume=0.5)
 kick_sound = sge.snd.Sound(os.path.join(DATA, "kick.wav"))
-# hammer_throw_sound = sge.snd.Sound(os.path.join(DATA, "hammer_throw.wav"),
-#                                    volume=0.5)
 die_sound = sge.snd.Sound(os.path.join(DATA, "die.wav"), volume=0.5)
-# brick_break_sound = sge.snd.Sound(os.path.join(DATA, "brick_break.wav"))
 # Load backgrounds
 layers = [sge.gfx.BackgroundLayer(
     sge.gfx.Sprite("background", DATA, transparent=False), 0, 0, -100000)]
@@ -1098,11 +1017,6 @@ background = sge.gfx.Background(layers, sge.gfx.Color((85, 170, 255)))
 chars = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-*!")
 font_sprite = sge.gfx.Sprite("font", DATA, transparent=sge.gfx.Color("black"))
 font = sge.gfx.Font.from_sprite(font_sprite, chars, size=8)
-
-########################
-# brick_sprite = sge.gfx.Sprite("brick", DATA, transparent=False)
-########################
-
 
 # Create rooms
 sge.game.start_room = TitleScreen()
