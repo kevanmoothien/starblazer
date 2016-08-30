@@ -29,13 +29,13 @@ FPS = 60
 ARENA_Y = 25
 ARENA_HEIGHT = 200
 
-PLAYER_ORIGIN_X = 5
-PLAYER_ORIGIN_Y = 40
+PLAYER_ORIGIN_X = 10
+PLAYER_ORIGIN_Y = 20
 PLAYER_FPS = 12
-PLAYER_BBOX_X = 50
-PLAYER_BBOX_Y = 3
-PLAYER_BBOX_WIDTH = 11
-PLAYER_BBOX_HEIGHT = 11
+PLAYER_BBOX_X = 20
+PLAYER_BBOX_Y = 6
+PLAYER_BBOX_WIDTH = 35
+PLAYER_BBOX_HEIGHT = 12
 PLAYER_BULLET_X = 16
 PLAYER_BULLET_Y = 0
 PLAYER_WALK_SPEED = 1
@@ -74,6 +74,7 @@ deploy = False
 remaining_bomb = 10
 remaining_bullet = 120
 player_life = 3
+remaining_fuel = 100
 
 class Game(sge.dsp.Game):
     fps_time = 0
@@ -221,10 +222,10 @@ class Arena(sge.dsp.Room):
                               color=sge.gfx.Color("white"), halign="left")
         sge.game.project_text(font, str(remaining_bullet), 130, SCORETITLE_Y,
                               color=sge.gfx.Color("blue"), halign="left")
-        # Life
-        sge.game.project_text(font, "Life", 170, SCORETITLE_Y,
+        # fuel
+        sge.game.project_text(font, "Fuel", 165, SCORETITLE_Y,
                               color=sge.gfx.Color("white"), halign="left")
-        sge.game.project_text(font, str(player_life), 210, SCORETITLE_Y,
+        sge.game.project_text(font, str(remaining_fuel), 200, SCORETITLE_Y,
                               color=sge.gfx.Color("blue"), halign="left")
         # score
         sge.game.project_text(font, "Score", 230, SCORETITLE_Y,
@@ -246,6 +247,9 @@ class Arena(sge.dsp.Room):
         global highscores
         global tank
         global fuelship
+        global deploy
+        global player_life
+        global remaining_fuel
 
         if alarm_id == "next_stage":
             self.stage += 1
@@ -306,6 +310,8 @@ class Arena(sge.dsp.Room):
 
                 infra = random.choice(self.infrastructure)
                 infra.create(300, 255)
+                remaining_fuel = remaining_fuel - 5
+
 
             self.alarms["spawn"] = SPAWN_INTERVAL
 
@@ -387,6 +393,7 @@ class Player(xsge_physics.Collider):
 
     def kill(self):
         global player_life
+        global remaining_fuel
         if not self.dead and ("invincible" not in self.alarms or
                               sge.game.current_room.gameover):
             self.dead = True
@@ -396,7 +403,8 @@ class Player(xsge_physics.Collider):
             self.image_index = 0
             play_sound(die_sound)
             player_life = player_life - 1
-            if player_life == 0:
+            remaining_fuel = remaining_fuel - 15
+            if player_life <= 0 or remaining_fuel <= 0:
                 sge.game.current_room.gameover = True
                 for obj in sge.game.current_room.objects[:]:
                     self.kill()
@@ -590,30 +598,29 @@ class Fuelship(Enemy):
     def event_step(self, time_passed, delta_mult):
         global fuelship
         global deploy
-        if self.x > 300:
+        if self.x > 320:
             fuelship = False
             self.destroy()
-        if self.x > 180 and deploy == False:
+        if self.x > 150 and deploy == False:
             deploy = True
             Fuel.create(self.x, self.y)
 
-class Fuel(sge.dsp.Object):
+class Fuel(xsge_physics.Collider):
     def __init__(self, x, y, sprite=None, visible=True, xvelocity=0,
                  yvelocity=0):
         super(Fuel, self).__init__(
             x, y, sprite=fuelbox_sprite,
-            xvelocity=1, yvelocity=1.5)
+            xvelocity=0.5, yvelocity=0.75)
     def event_step(self, time_passed, delta_mult):
         if self.y > sge.game.current_room.height + self.image_origin_y:
             # Corpse.create(self.x, sge.game.current_room.height - 20,
             #               sprite=explosion_sprite, life=8)
             self.destroy()
-    # def event_collision(self, other, xdirection, ydirection):
-    #     if isinstance(other, Enemy):
-    #         Corpse.create(self.x, self.y, z=(other.z + 1),
-    #                       sprite=explosion_sprite, life=8)
-    #         self.destroy()
-    #         other.hurt()
+    def event_collision(self, other, xdirection, ydirection):
+        global remaining_fuel
+        if isinstance(other, Player):
+            remaining_fuel = remaining_fuel + 20
+            self.destroy()
 
 class Tanker(Enemy):
     def __init__(self, x, y):
@@ -980,12 +987,12 @@ xsge_gui.init()
 gui_handler = xsge_gui.Handler()
 
 
-player_stand_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-player_stand_shoot_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-player_walk_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
-player_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True)
-player_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
-player_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True)
+player_stand_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
+player_stand_shoot_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
+player_walk_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
+player_walk_shoot_sprite = sge.gfx.Sprite("ship1", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
+player_die_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
+player_recover_sprite = sge.gfx.Sprite("ship0", DATA, transparent=True, bbox_width=35, bbox_height=12, width=35, height=12)
 
 cactus_sprite = sge.gfx.Sprite("cactus", DATA, transparent=True, bbox_x=6, bbox_y=-7,
                                     width=10, height=20, bbox_width=10, bbox_height=20)
@@ -1014,7 +1021,7 @@ bullet_dead_sprite = sge.gfx.Sprite(
     origin_y=2)
 bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
 
-fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True)
+fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True, bbox_width=20, bbox_height=20, width=15, height=15)
 # Load sounds
 shoot_sound = sge.snd.Sound(os.path.join(DATA, "shoot.wav"), volume=0.5)
 enemy_hit_sound = sge.snd.Sound(os.path.join(DATA, "enemy_hit.wav"), volume=0.5)
