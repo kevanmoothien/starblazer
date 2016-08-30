@@ -72,6 +72,7 @@ tank = False
 fuelship = False
 deploy = False
 remaining_bomb = 10
+remaining_bullet = 120
 player_life = 3
 
 class Game(sge.dsp.Game):
@@ -207,17 +208,29 @@ class Arena(sge.dsp.Room):
 
     def event_step(self, time_passed, delta_mult):
         global remaining_bomb
+        global remaining_bullet
         global player_life
-        # score
-        sge.game.project_text(font, "Score", SCORE_X, SCORETITLE_Y,
-                              color=sge.gfx.Color("white"), halign="center")
-        sge.game.project_text(font, str(score), SCORE_X + 35, SCORETITLE_Y,
-                              color=sge.gfx.Color("blue"), halign="center")
+
         # Bomb
-        sge.game.project_text(font, "Bomb", 30, SCORETITLE_Y,
-                              color=sge.gfx.Color("white"), halign="center")
-        sge.game.project_text(font, str(remaining_bomb), 60, SCORETITLE_Y,
-                              color=sge.gfx.Color("blue"), halign="center")
+        sge.game.project_text(font, "Bomb", 10, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="left")
+        sge.game.project_text(font, str(remaining_bomb), 50, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="left")
+        # bullet
+        sge.game.project_text(font, "Bullets", 70, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="left")
+        sge.game.project_text(font, str(remaining_bullet), 130, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="left")
+        # Life
+        sge.game.project_text(font, "Life", 170, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="left")
+        sge.game.project_text(font, str(player_life), 210, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="left")
+        # score
+        sge.game.project_text(font, "Score", 230, SCORETITLE_Y,
+                              color=sge.gfx.Color("white"), halign="left")
+        sge.game.project_text(font, str(score), 280, SCORETITLE_Y,
+                              color=sge.gfx.Color("blue"), halign="left")
 
         # display mission
         levels = ['Level 1 - Bomb the radar',
@@ -228,11 +241,6 @@ class Arena(sge.dsp.Room):
         sge.game.project_text(font, str(levels[self.stage]), 10, SCORETITLE_Y + 240,
                               color=sge.gfx.Color("blue"), halign="left")
 
-        # Life
-        sge.game.project_text(font, "Life", 260, SCORETITLE_Y,
-                              color=sge.gfx.Color("white"), halign="center")
-        sge.game.project_text(font, str(player_life), 290, SCORETITLE_Y,
-                              color=sge.gfx.Color("blue"), halign="center")
 
     def event_alarm(self, alarm_id):
         global highscores
@@ -353,13 +361,16 @@ class Player(xsge_physics.Collider):
 
     def action(self):
         global score
+        global remaining_bullet
 
         if not self.dead and not self.recovering:
-            play_sound(shoot_sound)
-            self.shooting = True
-            self.alarms["shoot_end"] = 2 * FPS / PLAYER_FPS
-            Bullet.create(self.x + PLAYER_BULLET_X, self.y + PLAYER_BULLET_Y)
-            score = max(0, score - BULLET_COST)
+            if remaining_bullet:
+                play_sound(shoot_sound)
+                self.shooting = True
+                self.alarms["shoot_end"] = 2 * FPS / PLAYER_FPS
+                Bullet.create(self.x + PLAYER_BULLET_X, self.y + PLAYER_BULLET_Y)
+                score = max(0, score - BULLET_COST)
+                remaining_bullet = remaining_bullet - 1
 
     def bomb(self):
         global score
