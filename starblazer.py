@@ -75,6 +75,7 @@ remaining_bomb = 10
 remaining_bullet = 120
 player_life = 3
 remaining_fuel = 100
+arena = {}
 
 class Game(sge.dsp.Game):
     fps_time = 0
@@ -151,13 +152,15 @@ class Arena(sge.dsp.Room):
         super(Arena, self).__init__(
             background=background, object_area_width=TILE_SIZE,
             object_area_height=TILE_SIZE)
+        global arena
+        arena = self
         self.difficulty = difficulty
         self.stage = -1
         self.spawn_chance = 0
         self.spawn_limit = 2
         self.spawn_choices = [Plane]
         self.gameover = False
-        self.infrastructure = [Cactus, Building, Tower]
+        self.infrastructure = [Cactus, Building, Tower, Radar]
         if difficulty == 0:
             self.brick_columns = 5
             self.recover_time = 0
@@ -257,7 +260,7 @@ class Arena(sge.dsp.Room):
             if self.stage <= 0:
                 self.spawn_chance = 0.1
                 self.spawn_limit = 2
-                self.spawn_choices = [Plane, Tanker, Fuelship]
+                self.spawn_choices = [Plane, Fuelship]
             elif self.stage <= 1:
                 self.spawn_chance = 0.15
                 self.spawn_limit = 3
@@ -552,10 +555,13 @@ class Enemy(xsge_physics.Collider):
             self.kill()
     def kill(self):
         global score
+        global arena
         play_sound(kick_sound)
         Corpse.create(self.x, self.y, sprite=self.sprite, yvelocity=-2,
                       yacceleration=0.25, image_yscale=-1, image_fps=0)
         score += self.points
+        if isinstance(self, Radar) and arena.stage == 0:
+            arena.event_alarm("next_stage")
         self.destroy()
     def event_create(self):
         if self.bbox_top < ARENA_Y:
@@ -725,6 +731,10 @@ class Building(Infrastructure):
 class Tower(Enemy):
     def __init__(self, x, y):
         super(Tower, self).__init__(x, y, z=y, sprite=tower_sprite,
+                                     xvelocity=-1.0)
+class Radar(Enemy):
+    def __init__(self, x, y):
+        super(Radar, self).__init__(x, y, z=y, sprite=radar_sprite,
                                      xvelocity=-1.0)
 
 class Menu(xsge_gui.MenuWindow):
@@ -1020,6 +1030,7 @@ bullet_dead_sprite = sge.gfx.Sprite(
     "bullet_dead", DATA, transparent=sge.gfx.Color("black"), origin_x=2,
     origin_y=2)
 bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
+radar_sprite = sge.gfx.Sprite("radar0", DATA, transparent=True, bbox_width=20, bbox_height=20, width=20, height=20, bbox_y=-10)
 
 fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True, bbox_width=20, bbox_height=20, width=15, height=15)
 # Load sounds
