@@ -560,8 +560,10 @@ class Enemy(xsge_physics.Collider):
         Corpse.create(self.x, self.y, sprite=self.sprite, yvelocity=-2,
                       yacceleration=0.25, image_yscale=-1, image_fps=0)
         score += self.points
+
         if isinstance(self, Radar) and arena.stage == 0:
             arena.event_alarm("next_stage")
+
         self.destroy()
     def event_create(self):
         if self.bbox_top < ARENA_Y:
@@ -640,11 +642,14 @@ class Tanker(Enemy):
     def kill(self):
         global score
         global tank
+        global arena
         play_sound(kick_sound)
         Corpse.create(self.x, self.y, sprite=self.sprite, yvelocity=-2,
                       yacceleration=0.25, image_yscale=-1, image_fps=0)
         score += self.points
         tank = False
+        if isinstance(self, Tanker) and arena.stage == 1:
+            arena.event_alarm("next_stage")
         self.destroy()
 
 class Corpse(sge.dsp.Object):
