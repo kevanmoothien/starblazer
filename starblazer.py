@@ -165,6 +165,7 @@ class Arena(sge.dsp.Room):
             self.brick_columns = 5
             self.recover_time = 0
             self.stage_interval = 90 * FPS
+            # self.stage = 2 # use for testing only
         # elif difficulty == 1:
         #     self.brick_columns = 4
         #     self.recover_time = 3
@@ -269,27 +270,29 @@ class Arena(sge.dsp.Room):
                 self.spawn_chance = 0.25
                 self.spawn_limit = 4
                 self.spawn_choices = [Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+                self.infrastructure = [Cactus, Building, Icbm]
             elif self.stage <= 3:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 5
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship]
             elif self.stage <= 4:
                 self.spawn_chance = 0.5
                 self.spawn_limit = 6
                 self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
-            elif self.stage <= 5:
-                self.spawn_chance = 0.5
-                self.spawn_limit = 6
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
-            elif self.stage <= 6:
-                self.spawn_chance = 0.5
-                self.spawn_limit = 6
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+                self.infrastructure = [Cactus, Building, Icbm, Headquarter]
+            # elif self.stage <= 5:
+            #     self.spawn_chance = 0.5
+            #     self.spawn_limit = 6
+            #     self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+            # elif self.stage <= 6:
+            #     self.spawn_chance = 0.5
+            #     self.spawn_limit = 6
+            #     self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
             else:
                 self.spawn_chance = 1 - ((1 - self.spawn_chance) / 2)
                 self.spawn_limit = 7
                 self.spawn_choices.append(random.choice([Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]))
-
+                print("Completed")
             self.alarms["next_stage"] = self.stage_interval
 
         elif alarm_id == "spawn":
@@ -323,6 +326,11 @@ class Arena(sge.dsp.Room):
                                               score)
             room = GameOverScreen()
             room.start()
+        elif alarm_id == "completed":
+            highscores[self.difficulty] = max(highscores[self.difficulty],
+                                              score)
+            room = CompletedScreen()
+            room.start()
 
     def event_key_press(self, key, char):
         if key == "escape":
@@ -332,10 +340,39 @@ class GameOverScreen(sge.dsp.Room):
     def event_room_start(self):
         self.add(gui_handler)
     def event_step(self, time_passed, delta_mult):
+        global score, tank, fuelship, deploy, remaining_bomb, remaining_fuel, remaining_bullet, player_life
         text = "Game Over\n\nScore - {}".format(score)
         self.project_text(font, text, self.width / 2, self.height / 2, 0,
                           color=sge.gfx.Color("white"), halign="center",
                           valign="middle", anti_alias=False)
+
+        tank = False
+        fuelship = False
+        deploy = False
+        remaining_bomb = 10
+        remaining_bullet = 120
+        player_life = 3
+        remaining_fuel = 100
+    def event_key_press(self, key, char):
+        sge.game.start_room.start()
+
+class CompletedScreen(sge.dsp.Room):
+    def event_room_start(self):
+        self.add(gui_handler)
+    def event_step(self, time_passed, delta_mult):
+        global score, tank, fuelship, deploy, remaining_bomb, remaining_fuel, remaining_bullet, player_life
+        text = "Wow! You completed all levels\n\nScore - {}".format(score)
+        self.project_text(font, text, self.width / 2, self.height / 2, 0,
+                          color=sge.gfx.Color("white"), halign="center",
+                          valign="middle", anti_alias=False)
+
+        tank = False
+        fuelship = False
+        deploy = False
+        remaining_bomb = 10
+        remaining_bullet = 120
+        player_life = 3
+        remaining_fuel = 100
     def event_key_press(self, key, char):
         sge.game.start_room.start()
 
@@ -563,6 +600,10 @@ class Enemy(xsge_physics.Collider):
 
         if isinstance(self, Radar) and arena.stage == 0:
             arena.event_alarm("next_stage")
+        if isinstance(self, Icbm) and arena.stage == 2:
+            arena.event_alarm("next_stage")
+        if isinstance(self, Headquarter) and arena.stage == 4:
+            arena.event_alarm("completed")
 
         self.destroy()
     def event_create(self):
@@ -649,6 +690,8 @@ class Tanker(Enemy):
         score += self.points
         tank = False
         if isinstance(self, Tanker) and arena.stage == 1:
+            arena.event_alarm("next_stage")
+        if isinstance(self, Tanker) and arena.stage == 3:
             arena.event_alarm("next_stage")
         self.destroy()
 
@@ -742,6 +785,16 @@ class Radar(Enemy):
         super(Radar, self).__init__(x, y, z=y, sprite=radar_sprite,
                                      xvelocity=-1.0)
 
+class Icbm(Enemy):
+    def __init__(self, x, y):
+        super(Icbm, self).__init__(x, y, z=y, sprite=icbm_sprite,
+                                     xvelocity=-1.0)
+
+class Headquarter(Enemy):
+    def __init__(self, x, y):
+        super(Headquarter, self).__init__(x, y, z=y, sprite=headquarter_sprite,
+                                     xvelocity=-1.0)
+
 class Menu(xsge_gui.MenuWindow):
     items = []
     @classmethod
@@ -763,8 +816,10 @@ class MainMenu(Menu):
     items = ["Start Game", "Options", "Quit"]
 
     def event_choose(self):
+        global score
         if self.choice == 0:
             arena = Arena(self.choice)
+            score = 0
             arena.start()
         elif self.choice == 1:
             OptionsMenu.create_page()
@@ -1035,7 +1090,9 @@ bullet_dead_sprite = sge.gfx.Sprite(
     "bullet_dead", DATA, transparent=sge.gfx.Color("black"), origin_x=2,
     origin_y=2)
 bomb_sprite = sge.gfx.Sprite("bomb", DATA, transparent=True)
+icbm_sprite = sge.gfx.Sprite("icbm", DATA, transparent=True, bbox_width=25, bbox_height=13, width=25, height=13, bbox_y=-10)
 radar_sprite = sge.gfx.Sprite("radar0", DATA, transparent=True, bbox_width=20, bbox_height=20, width=20, height=20, bbox_y=-10)
+headquarter_sprite = sge.gfx.Sprite("headquarters", DATA, transparent=True, bbox_width=20, bbox_height=40, width=20, height=40, bbox_y=-10)
 
 fuelbox_sprite = sge.gfx.Sprite("fuelbox0", DATA, transparent=True, bbox_width=20, bbox_height=20, width=15, height=15)
 # Load sounds
