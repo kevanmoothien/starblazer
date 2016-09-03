@@ -46,7 +46,7 @@ BULLET_SPEED = 4
 
 ENEMY_SPEED = 0.375
 
-SPAWN_INTERVAL = 30
+ENEMY_INTERVAL = 30
 
 SCORETITLE_Y = 4
 SCORE_X = 160
@@ -156,34 +156,21 @@ class Arena(sge.dsp.Room):
         arena = self
         self.difficulty = difficulty
         self.stage = -1
-        self.spawn_chance = 0
-        self.spawn_limit = 2
-        self.spawn_choices = [Plane]
+        self.enemy_chance = 0
+        self.enemy_limit = 2
+        self.enemy_choices = [Plane]
         self.gameover = False
         self.infrastructure = [Cactus, Building, Tower, Radar]
         if difficulty == 0:
-            self.brick_columns = 5
             self.recover_time = 0
             self.stage_interval = 90 * FPS
-            # self.stage = 2 # use for testing only
-        # elif difficulty == 1:
-        #     self.brick_columns = 4
-        #     self.recover_time = 3
-        #     self.stage_interval = 45 * FPS
-        #     self.stage = 0
-        # elif difficulty == 2:
-        #     self.brick_columns = 3
-        #     self.recover_time = 5
-        #     self.stage_interval = 30 * FPS
-        #     self.stage = 1
         else:
-            self.brick_columns = 1
             self.recover_time = 10
             self.stage_interval = 10 * FPS
             self.stage = 5
 
         self.event_alarm("next_stage")
-        self.alarms["spawn"] = SPAWN_INTERVAL
+        self.alarms["spawn"] = ENEMY_INTERVAL
 
     def pause(self):
         global highscores
@@ -259,47 +246,38 @@ class Arena(sge.dsp.Room):
             self.stage += 1
 
             if self.stage <= 0:
-                self.spawn_chance = 0.1
-                self.spawn_limit = 2
-                self.spawn_choices = [Plane, Fuelship]
+                self.enemy_chance = 0.1
+                self.enemy_limit = 2
+                self.enemy_choices = [Plane, Fuelship]
             elif self.stage <= 1:
-                self.spawn_chance = 0.15
-                self.spawn_limit = 3
-                self.spawn_choices = [Plane, Tanker, Fuelship]
+                self.enemy_chance = 0.15
+                self.enemy_limit = 3
+                self.enemy_choices = [Plane, Tanker, Fuelship]
             elif self.stage <= 2:
-                self.spawn_chance = 0.25
-                self.spawn_limit = 4
-                self.spawn_choices = [Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+                self.enemy_chance = 0.25
+                self.enemy_limit = 4
+                self.enemy_choices = [Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
                 self.infrastructure = [Cactus, Building, Icbm]
             elif self.stage <= 3:
-                self.spawn_chance = 0.5
-                self.spawn_limit = 5
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship]
+                self.enemy_chance = 0.5
+                self.enemy_limit = 5
+                self.enemy_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship]
             elif self.stage <= 4:
-                self.spawn_chance = 0.5
-                self.spawn_limit = 6
-                self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
+                self.enemy_chance = 0.5
+                self.enemy_limit = 6
+                self.enemy_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
                 self.infrastructure = [Cactus, Building, Icbm, Headquarter]
-            # elif self.stage <= 5:
-            #     self.spawn_chance = 0.5
-            #     self.spawn_limit = 6
-            #     self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
-            # elif self.stage <= 6:
-            #     self.spawn_chance = 0.5
-            #     self.spawn_limit = 6
-            #     self.spawn_choices = [Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]
             else:
-                self.spawn_chance = 1 - ((1 - self.spawn_chance) / 2)
-                self.spawn_limit = 7
-                self.spawn_choices.append(random.choice([Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]))
-                print("Completed")
+                self.enemy_chance = 1 - ((1 - self.enemy_chance) / 2)
+                self.enemy_limit = 7
+                self.enemy_choices.append(random.choice([Plane, Plane, Plane, Plane, Plane, Tanker, Tanker, Fuelship, Fuelship]))
             self.alarms["next_stage"] = self.stage_interval
 
         elif alarm_id == "spawn":
             enemies = list(filter(lambda o: isinstance(o, Enemy), self.objects))
-            if (random.random() < self.spawn_chance and
-                    len(enemies) < self.spawn_limit):
-                cls = random.choice(self.spawn_choices)
+            if (random.random() < self.enemy_chance and
+                    len(enemies) < self.enemy_limit):
+                cls = random.choice(self.enemy_choices)
                 y = random.uniform(ARENA_Y + TILE_SIZE,
                                    ARENA_Y + ARENA_HEIGHT - TILE_SIZE)
                 if cls == Tanker:
@@ -319,7 +297,7 @@ class Arena(sge.dsp.Room):
                 remaining_fuel = remaining_fuel - 5
 
 
-            self.alarms["spawn"] = SPAWN_INTERVAL
+            self.alarms["spawn"] = ENEMY_INTERVAL
 
         elif alarm_id == "gameover":
             highscores[self.difficulty] = max(highscores[self.difficulty],
@@ -379,9 +357,7 @@ class CompletedScreen(sge.dsp.Room):
 class Player(xsge_physics.Collider):
     def __init__(self, x, y):
         super(Player, self).__init__(
-            x, y, z=y, sprite=player_stand_sprite, checks_collisions=False,
-            bbox_x=PLAYER_BBOX_X, bbox_y=PLAYER_BBOX_Y, bbox_width=PLAYER_BBOX_WIDTH,
-            bbox_height=PLAYER_BBOX_HEIGHT)
+            x, y, z=y, sprite=player_stand_sprite, checks_collisions=False)
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
@@ -639,6 +615,24 @@ class Plane(Enemy):
     def __init__(self, x, y):
         super(Plane, self).__init__(x, y, z=y, sprite=planes_sprite,
                                      xvelocity=-ENEMY_SPEED)
+    def event_step(self, time_passed, delta_mult):
+        bullet_rate = 0.98
+        if random.random() > bullet_rate:
+            BulletEnemy.create(self.x, self.y - 9)
+
+class BulletEnemy(Enemy):
+    def __init__(self, x, y):
+        super(BulletEnemy, self).__init__(
+            x, y, z=y, sprite=bullet_sprite, xvelocity=-3)
+    def event_step(self, time_passed, delta_mult):
+        if self.bbox_left < 0:
+            self.destroy()
+    def event_collision(self, other, xdirection, ydirection):
+        if isinstance(other, Player):
+            Corpse.create(self.x, self.y, z=(other.z + 1),
+                          sprite=bullet_dead_sprite, life=8)
+            self.destroy()
+            other.kill()
 
 class Fuelship(Enemy):
     def __init__(self, x, y):
